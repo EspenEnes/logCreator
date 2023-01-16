@@ -12,6 +12,11 @@ import sys
 from SiemensToolBox.SimaticDataTypes import s7Types
 import os
 import re
+from collections import OrderedDict
+from anytree import Node
+
+class MyNode(Node):
+    separator = "."
 
 
 class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
@@ -42,7 +47,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.settings = QSettings()
 
         self.configText = ""
-        self.version = "0.2"
+        self.version = "0.3"
 
     def _change_context_menu(self, state):
         if state:
@@ -282,6 +287,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
     def generateConfig(self):
         # keep 2 first lines
         text = self.configText.split("\n")[:2]
+        old = None
 
         if len(self.selectedSignals) > 0:
 
@@ -305,11 +311,13 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
                 if self.checkBox.checkState():
                     db = self.FastLogDB.text()
 
-                    if _type == 2:
+                    if ".".join(name.split(".")[:-1]) != old or _type == 2:
                         if adress % 8 != 0:
                             adress += (8 - (adress % 8))
                         if (adress // 8) % 2 != 0:
                             adress += 8
+                        old = ".".join(name.split(".")[:-1])
+
 
                     byte = adress // 8
                     bit = adress % 8
@@ -348,26 +356,64 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
             root[rootname[0]] = self.buildDict(root[rootname[0]], (rootname[1:], signaltype))
         except IndexError:
             root[rootname[0]] = signaltype
-
-
         return root
 
 
-    def buildVariableTable(self, signals):
+    def buildVariableTable_list(self, signals):
         _signals = []
-        dictSgnals = {}
+
         for x in signals:
             signal, convert = x.values()
+
             name: list = signal.name.split(".")
             root = signal.dbSymbol if signal.dbSymbol != None else signal.db
+            root = root.replace(" ", "_")
             name.insert(0,root)
-            _signals.append((name, signal.type))
+            newType = signal.type
+            if convert:
+                newType = "REAL"
+
+            _signals.append((name, newType))
+        return _signals
+
+    def buildVariableTable_dict(self, signals):
+        _signals = self.buildVariableTable_list(signals)
+        dictSgnals = {}
         for listedName in _signals:
             self.buildDict(dictSgnals, listedName)
+        self.sortVariableTable_dict(dictSgnals)
+        return dictSgnals
+
+    def sortVariableTable_dict(self, signals):
+        sorted = OrderedDict(signals)
+        root = MyNode("root")
+        self.root = self.dictToNodeTree(sorted, root)
+        return "a"
+
+
+
+
+
+
+    def builVariableTable_awl(self, signals):
+        dictSgnals = self.buildVariableTable_dict(signals)
+
 
         awl = ""
-        awl += self.AwlGen(awl,dictSgnals)
+        awl += self.AwlGen(awl, dictSgnals)
         return awl
+
+    def dictToNodeTree(self, signals: OrderedDict, root):
+
+
+
+        for key, value in signals.items():
+            if type(value) == dict:
+                self.dictToNodeTree(value, MyNode(key, root))
+            else:
+                _node = MyNode(key, root)
+                _node.__setattr__("row_data", value)
+        return root
 
 
 
@@ -405,7 +451,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
 
 
         # Build up Variables
-        awl += self.buildVariableTable(self.selectedSignals)
+        awl += self.builVariableTable_awl(self.selectedSignals)
         # addedVariables = []
         # for x in self.selectedSignals:
         #     signal, convert = x.values()
@@ -434,6 +480,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
             signal, convert = x.values()
             listedname: list = signal.name.split(".")
             root = signal.dbSymbol if signal.dbSymbol != None else signal.db
+            root = root.replace(" ", "_")
             listedname.insert(0, root)
             name = ".".join(listedname)
             # name: str = signal.name.split(".")
