@@ -1,19 +1,20 @@
-import contextlib
-from collections import namedtuple
-
-from PySide6.QtGui import QAction, QPixmap, QColor
-from PySide6.QtWidgets import QFileDialog, QMenu, QMessageBox
-from PySide6.QtGui import QIcon, QTextCursor
-from SiemensToolBox.Step7V5.project import ProjectV5
-from QtDesign import PlcLogCreator
-from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtCore import Signal, Qt, QSettings, QDir
-import sys
-from SiemensToolBox.SimaticDataTypes import s7Types
 import os
 import re
+import sys
 from collections import OrderedDict
+from collections import namedtuple
+
+from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6.QtCore import Signal, Qt, QSettings, QDir
+from PySide6.QtGui import QAction, QPixmap, QColor
+from PySide6.QtGui import QIcon, QTextCursor
+from PySide6.QtWidgets import QFileDialog, QMenu, QMessageBox
+from SiemensToolBox.SimaticDataTypes import s7Types
+from SiemensToolBox.Step7V5.project import ProjectV5
 from anytree import Node
+
+from QtDesign import PlcLogCreator
+
 
 class MyNode(Node):
     separator = "."
@@ -285,6 +286,9 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.plainTextEdit.appendPlainText(text)
 
     def generateConfig(self):
+        if self.checkBox.isChecked():
+            return self.generateConfig_FastLogDB()
+
         # keep 2 first lines
         text = self.configText.split("\n")[:2]
         old = None
@@ -327,6 +331,37 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
                 adress += 32 if _type == 2 else 1
         return "\n".join(text)
 
+    def generateConfig_FastLogDB(self):
+        text = self.configText.split("\n")[:2]
+
+        if len(self.selectedSignals) == 0:
+            return "\n".join(text)
+
+        self.builVariableTable_awl(self.selectedSignals)
+        db = self.FastLogDB.text()
+        adress = 0
+        old = None
+
+        for node in self.root.leaves:
+            path = ".".join([str(_.name) for _ in node.path][1:])
+            _typeName = node.row_data
+            _type = 2
+            if node.row_data == "BOOL":
+                _type = 1
+
+            if ".".join(path.split(".")[:-1]) != old or _type == 2:
+                if adress % 8 != 0:
+                    adress += (8 - (adress % 8))
+                if (adress // 8) % 2 != 0:
+                    adress += 8
+                old = ".".join(path.split(".")[:-1])
+            byte = adress // 8
+            bit = adress % 8
+            text.append(f"{path};{db};{byte};{_type};{bit}")
+
+            adress += 32 if _type == 2 else 1
+        return "\n".join(text)
+
     def renameIfExist(self, variable, added=None):
         if added is None:
             added = []
@@ -347,7 +382,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
 
 
 
-    def buildDict(self,root, signals):
+    def buildDict(self, root, signals):
         rootname, signaltype = signals
 
         if rootname[0] not in root.keys():
@@ -368,7 +403,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
             name: list = signal.name.split(".")
             root = signal.dbSymbol if signal.dbSymbol != None else signal.db
             root = root.replace(" ", "_")
-            name.insert(0,root)
+            name.insert(0, root)
             newType = signal.type
             if convert:
                 newType = "REAL"
