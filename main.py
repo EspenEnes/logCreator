@@ -312,7 +312,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
 
                 db = signal.db
 
-                if self.checkBox.checkState():
+                if self.checkBox.isChecked():
                     db = self.FastLogDB.text()
 
                     if ".".join(name.split(".")[:-1]) != old or _type == 2:
@@ -332,6 +332,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         return "\n".join(text)
 
     def generateConfig_FastLogDB(self):
+        print("FastLog")
         text = self.configText.split("\n")[:2]
 
         if len(self.selectedSignals) == 0:
