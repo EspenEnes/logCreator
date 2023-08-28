@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'PlcLogCreator.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.1
+## Created by: Qt User Interface Compiler version 6.5.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
     QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
     QLabel, QLineEdit, QMainWindow, QMenu,
     QMenuBar, QPlainTextEdit, QPushButton, QSizePolicy,
-    QSplitter, QWidget)
+    QSplitter, QVBoxLayout, QWidget)
 
 from costumtreeview import CostumTreeView
 
@@ -111,6 +111,8 @@ class Ui_MainWindow(object):
         self.groupBox.setAlignment(Qt.AlignBottom|Qt.AlignLeading|Qt.AlignLeft)
         self.horizontalLayout_3 = QHBoxLayout(self.groupBox)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setObjectName(u"verticalLayout")
         self.checkBox = QCheckBox(self.groupBox)
         self.checkBox.setObjectName(u"checkBox")
         sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -120,7 +122,15 @@ class Ui_MainWindow(object):
         self.checkBox.setSizePolicy(sizePolicy1)
         self.checkBox.setMinimumSize(QSize(1, 17))
 
-        self.horizontalLayout_3.addWidget(self.checkBox)
+        self.verticalLayout.addWidget(self.checkBox)
+
+        self.checkBox_RemPrefix = QCheckBox(self.groupBox)
+        self.checkBox_RemPrefix.setObjectName(u"checkBox_RemPrefix")
+
+        self.verticalLayout.addWidget(self.checkBox_RemPrefix)
+
+
+        self.horizontalLayout_3.addLayout(self.verticalLayout)
 
         self.label_3 = QLabel(self.groupBox)
         self.label_3.setObjectName(u"label_3")
@@ -154,7 +164,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 800, 21))
+        self.menubar.setGeometry(QRect(0, 0, 800, 22))
         self.menuOpen = QMenu(self.menubar)
         self.menuOpen.setObjectName(u"menuOpen")
         self.menuHelp = QMenu(self.menubar)
@@ -179,6 +189,7 @@ class Ui_MainWindow(object):
         self.FastLogDB.editingFinished.connect(MainWindow.onFastLogDbChange)
         self.pushButton.clicked["bool"].connect(MainWindow.onExport)
         self.actionAbout.triggered.connect(MainWindow.onAbout)
+        self.checkBox_RemPrefix.stateChanged.connect(MainWindow.onRemove_prefix)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -192,6 +203,7 @@ class Ui_MainWindow(object):
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"MPI", None))
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Config", None))
         self.checkBox.setText(QCoreApplication.translate("MainWindow", u"Fast Log", None))
+        self.checkBox_RemPrefix.setText(QCoreApplication.translate("MainWindow", u"Remove Prefix", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"DB", None))
         self.FastLogDB.setText(QCoreApplication.translate("MainWindow", u"2700", None))
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"Show AWL Source", None))

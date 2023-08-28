@@ -176,7 +176,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
             data = item.layout.nodeTree
             self.treeView.modelData(data)
 
-
     def onSelectIp(self, ip):
         ip = self.comboBox_2.itemData(self.comboBox_2.currentIndex())
         if not ip: return
@@ -226,11 +225,12 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
             row.adress = signal.row_data.address
             row.name = signal.row_data.path
             row.type = signal.row_data.dataType
-            row.dbSymbol = item.syblolName
+            row.dbSymbol = item.syblolName.removeprefix("#")
             rows.append(row)
 
         for value in rows:
             name = value.name
+
             byte, bit = value.adress.split(".")
             _typeName = value.type
             if value.type == "REAL":
@@ -285,9 +285,13 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.plainTextEdit.clear()
         self.plainTextEdit.appendPlainText(text)
 
+    def onRemove_prefix(self):
+        self._drawTextEditField()
+
     def generateConfig(self):
         if self.checkBox.isChecked():
             return self.generateConfig_FastLogDB()
+
 
         # keep 2 first lines
         text = self.configText.split("\n")[:2]
@@ -303,6 +307,12 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
                 root = signal.dbSymbol if signal.dbSymbol != None else signal.db
                 listedname.insert(0, root)
                 name = ".".join(listedname)
+
+                if self.checkBox_RemPrefix.isChecked():
+                    name = name.split(".")[-1]
+
+                # remove prefix #.
+                # name = name.removeprefix("#")
 
                 byte, bit = signal.adress.split(".")
                 _typeName = signal.type
@@ -322,7 +332,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
                             adress += 8
                         old = ".".join(name.split(".")[:-1])
 
-
                     byte = adress // 8
                     bit = adress % 8
 
@@ -332,7 +341,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         return "\n".join(text)
 
     def generateConfig_FastLogDB(self):
-        print("FastLog")
         text = self.configText.split("\n")[:2]
 
         if len(self.selectedSignals) == 0:
@@ -345,6 +353,10 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
 
         for node in self.root.leaves:
             path = ".".join([str(_.name) for _ in node.path][1:])
+
+            if self.checkBox_RemPrefix.isChecked():
+                path = path.split(".")[-1]
+
             _typeName = node.row_data
             _type = 2
             if node.row_data == "BOOL":
@@ -379,10 +391,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
             added.append(variable)
             return variable
 
-
-
-
-
     def buildDict(self, root, signals):
         rootname, signaltype = signals
 
@@ -393,7 +401,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         except IndexError:
             root[rootname[0]] = signaltype
         return root
-
 
     def buildVariableTable_list(self, signals):
         _signals = []
@@ -426,22 +433,14 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.root = self.dictToNodeTree(sorted, root)
         return "a"
 
-
-
-
-
-
     def builVariableTable_awl(self, signals):
         dictSgnals = self.buildVariableTable_dict(signals)
-
 
         awl = ""
         awl += self.AwlGen(awl, dictSgnals)
         return awl
 
     def dictToNodeTree(self, signals: OrderedDict, root):
-
-
 
         for key, value in signals.items():
             if type(value) == dict:
@@ -451,11 +450,11 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
                 _node.__setattr__("row_data", value)
         return root
 
-
-
-    def AwlGen(self, awl:str, dictSignals):
+    def AwlGen(self, awl: str, dictSignals):
         for key, value in dictSignals.items():
-            if type(value) == dict :
+            if type(value) == dict:
+                if key.isdigit():
+                    key = key + "_"
                 awl += f"{key} : STRUCT\n"
                 awl = self.AwlGen(awl, value)
                 awl += "END_STRUCT ;\n"
@@ -464,15 +463,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
                 awl += f"{key}: {value} ;\n"
 
         return awl
-
-
-
-
-
-
-
-
-
 
     def generateAwl(self):
 
@@ -483,8 +473,6 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         awl += "\n"
         awl += "\n"
         awl += "VAR\n"
-
-
 
         # Build up Variables
         awl += self.builVariableTable_awl(self.selectedSignals)
@@ -515,6 +503,11 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         for x in self.selectedSignals:
             signal, convert = x.values()
             listedname: list = signal.name.split(".")
+
+            for i, x in enumerate(listedname):
+                if x.isdigit():
+                    listedname[i] = x + "_"
+
             root = signal.dbSymbol if signal.dbSymbol != None else signal.db
             root = root.replace(" ", "_")
             listedname.insert(0, root)
