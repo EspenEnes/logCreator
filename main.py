@@ -48,7 +48,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.settings = QSettings()
 
         self.configText = ""
-        self.version = "0.4"
+        self.version = "0.5"
 
     def _change_context_menu(self, state):
         if state:
