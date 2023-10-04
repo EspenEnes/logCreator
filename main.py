@@ -187,7 +187,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.statusBar().showMessage(f"{self.project.projectName}: {location}")
 
         self.actionLoad.setDisabled(False)
-        self.actionLoad.setDisabled(False)
+        self.actionSave_Config.setDisabled(False)
 
     def onOpenProject(self, folder):
         settings = QSettings("PlcLog_Creator", "data")
