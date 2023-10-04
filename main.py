@@ -59,7 +59,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.settings = QSettings()
 
         self.configText = ""
-        self.version = "0.6"
+        self.version = "0.7"
 
         self.actionLoad.setDisabled(True)
         self.actionSave_Config.setDisabled(True)
