@@ -1,9 +1,9 @@
 import os
+import pickle
 import re
 import sys
 from collections import OrderedDict
-from collections import namedtuple
-
+from dataclasses import dataclass, field
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Signal, Qt, QSettings, QDir
 from PySide6.QtGui import QAction, QPixmap, QColor
@@ -18,6 +18,17 @@ from QtDesign import PlcLogCreator
 
 class MyNode(Node):
     separator = "."
+@dataclass
+class Plc_signal:
+    """["db", "adress", "name", "type", "dbSymbol"])"""
+    db: int = field(init=False)
+    adress: str = field(init=False)
+    name: str = field(init=False)
+    type: str = field(init=False)
+    dbSymbol: str = field(init=False)
+
+
+
 
 
 class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
@@ -50,6 +61,13 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         self.configText = ""
         self.version = "0.6"
 
+        self.actionLoad.setDisabled(True)
+        self.actionSave_Config.setDisabled(True)
+
+
+
+
+
     def _change_context_menu(self, state):
         if state:
             self.plainTextEdit.setContextMenuPolicy(Qt.DefaultContextMenu)
@@ -81,6 +99,31 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
 
         dlg.show()
         dlg.exec()
+
+
+
+    def onOpenConfig(self):
+        path, filter = QFileDialog.getOpenFileName()
+        if path == "": return
+
+        with open(path, 'rb') as f:
+            # The protocol version used is detected automatically, so we do not
+            # have to specify it.
+
+            self.selectedSignals = pickle.load(f)
+        self._drawTextEditField()
+
+    def onSaveConfig(self):
+        path, filter  = QFileDialog.getSaveFileName()
+        if path == "": return
+
+        with open(path, 'wb') as f:
+            # The protocol version used is detected automatically, so we do not
+            # have to specify it.
+            pickle.dump(self.selectedSignals,f)
+
+
+
 
     def onExport(self):
 
@@ -142,6 +185,9 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         if hasattr(self.project, "projectZipFile"):
             location = self.project.projectZipFile
         self.statusBar().showMessage(f"{self.project.projectName}: {location}")
+
+        self.actionLoad.setDisabled(False)
+        self.actionLoad.setDisabled(False)
 
     def onOpenProject(self, folder):
         settings = QSettings("PlcLog_Creator", "data")
@@ -220,7 +266,7 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         YesAll = False
 
         for signal in signals:
-            row = namedtuple("row", ["db", "adress", "name", "type", "dbSymbol"])
+            row = Plc_signal()#namedtuple("row", ["db", "adress", "name", "type", "dbSymbol"])
             row.db = db
             row.adress = signal.row_data.address
             row.name = signal.row_data.path
