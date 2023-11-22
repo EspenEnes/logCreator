@@ -542,6 +542,10 @@ class PlclogConfigCreator(QtWidgets.QMainWindow, PlcLogCreator.Ui_MainWindow):
         awl += "TITLE = Fastlog Signal Mapping\n"
         awl += "//Map signals from global Datablocks to this instance Datablock for fast logging\n"
         awl += "//Convertion of signals to format REAL (for PLClog)\n"
+        awl += "//\n"
+        awl += "//#####    FastLog Config\n"
+        for line in self.generateConfig().split("\n"):
+            awl += f"//{line}\n"
         awl += "\n"
 
         # Map signals and move to variables
