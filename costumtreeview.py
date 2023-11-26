@@ -24,6 +24,15 @@ class CostumTreeView(QTreeView):
         self.model2 = TableDataModel(data)
         self.setModel(self.model1)
 
+    def sort_func(self, e) -> int:
+        "Sorts the signals by address"
+        address = e.row_data.address
+        byte_bit = address.split(".")
+        value = int(byte_bit[0]) * 8
+        if len(byte_bit) > 1:
+            value += int(byte_bit[1])
+        return value
+
     def addSignals(self):
         signals = []
         for x in self.selectedIndexes():
@@ -33,7 +42,10 @@ class CostumTreeView(QTreeView):
             else:
                 signals.append(x.internalPointer())
 
-        self.AddSignals.emit([x for x in set(signals) if hasattr(x, "row_data")])
+        signals_to_add = [x for x in set(signals) if hasattr(x, "row_data")]
+
+        signals_to_add.sort(key=self.sort_func)
+        self.AddSignals.emit(signals_to_add)
 
     def contextMenuEvent(self, arg__1) -> None:
         menu = QMenu()
